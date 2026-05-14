@@ -1,126 +1,44 @@
-from problems.TSPProblem import TSPProblem
-from algorithms.hill_climber import HillClimber
-from algorithms.simulated_annealing import SimulatedAnnealing
-from visualisation.tsp_plot import plot_route, plot_convergence_comparison, plot_mean_convergence, plot_boxplots, plot_violinplots
-import numpy as np
 import csv
-import time
+import numpy as np
+
+from experiments.experiment_runner import ExperimentRunner
+
+from visualisation.tsp_plot import (
+    plot_route,
+    plot_convergence_comparison,
+    plot_mean_convergence,
+    plot_boxplots,
+    plot_violinplots
+)
 
 
-def main():
-    seeds = [16,27,28,67,69,300,420,710,1337,12345]
-    num_cities = 20
-    max_iterations = 10000
-    initial_temp = 1000
-    cooling_rate = 0.995
-    min_temp = 0.001
+def save_results_to_csv(results: list[dict], output_path: str):
+    fieldnames = [
+        "seed",
+        "algorithm",
+        "best_cost",
+        "iterations",
+        "neighbour_strategy",
+        "initial_temperature",
+        "cooling_rate",
+        "min_temperature",
+        "runtime_seconds"
+    ]
 
-    hc_costs = []
-    sa_costs = []
-    best_hc_run = None
-    best_sa_run = None
-    hc_history = []
-    sa_history = []
-    results = []
-    hc_runtimes = []
-    sa_runtimes = []
-
-    for seed in seeds:
-        print(f"\nseed running: {seed}")
-
-        problem = TSPProblem.generate_random(
-            num_cities=num_cities,
-            seed=seed
-        )
-
-        initial_route = problem.generate_initial_solution(seed=seed)
-        initial_distance = problem.evaluate(initial_route)
-
-        hc_start = time.perf_counter()
-        hill_climber = HillClimber(
-            max_iterations=max_iterations,
-            seed=seed,
-            neighbour_strategy="two_opt"
-        )
-
-        hc_result = hill_climber.optimise(problem)
-        hc_runtime = time.perf_counter() - hc_start
-        hc_runtimes.append(hc_runtime)
-
-        sa_start = time.perf_counter()
-
-        simulated_annealing = SimulatedAnnealing(
-            max_iterations=max_iterations,
-            seed=seed,
-            neighbour_strategy="two_opt",
-            initial_temperature=initial_temp,
-            cooling_rate=cooling_rate,
-            min_temperature=min_temp
-        )
-
-        sa_result = simulated_annealing.optimise(problem)
-        sa_runtime = time.perf_counter() - sa_start
-        sa_runtimes.append(sa_runtime)
-
-        hc_costs.append(hc_result["best_cost"])
-        sa_costs.append(sa_result["best_cost"])
-        hc_history.append(hc_result["history"])
-        sa_history.append(sa_result["history"])
-
-        results.append({
-            "seed": seed,
-            "algorithm": "HillClimber",
-            "best_cost": hc_result["best_cost"],
-            "iterations": max_iterations,
-            "neighbour_strategy": "two_opt",
-            "initial_temperature": "",
-            "cooling_rate": "",
-            "min_temperature": "",
-            "runtime_seconds": hc_runtime
-        })
-        results.append({
-            "seed": seed,
-            "algorithm": "SimulatedAnnealing",
-            "best_cost": sa_result["best_cost"],
-            "iterations": max_iterations,
-            "initial_temperature": initial_temp,
-            "cooling_rate": cooling_rate,
-            "min_temperature": min_temp,
-            "neighbour_strategy": "two_opt",
-            "runtime_seconds": sa_runtime
-        })
-
-        print(f"Initial Distance: {initial_distance:.2f}")
-        print(f"HC Best Distance: {hc_result['best_cost']:.2f}")
-        print(f"HC runtime: {hc_runtime:.2f}")
-        print(f"SA Best Distance: {sa_result['best_cost']:.2f}")
-        print(f"SA runtime: {sa_runtime:.2f}")
+    with open(output_path, mode="w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(results)
 
 
-        if best_hc_run is None or hc_result["best_cost"] < best_hc_run["result"]["best_cost"]:
-            best_hc_run = {
-                "seed": seed,
-                "problem": problem,
-                "initial_route": initial_route,
-                "initial_distance": initial_distance,
-                "result": hc_result,
-                "runtime_seconds": hc_runtime
-            }
+def print_summary_statistics(
+    hc_costs: list[float],
+    sa_costs: list[float],
+    hc_runtimes: list[float],
+    sa_runtimes: list[float]
+):
+    print("\nSummary Statistics")
 
-        if best_sa_run is None or sa_result["best_cost"] < best_sa_run["result"]["best_cost"]:
-            best_sa_run = {
-                "seed": seed,
-                "problem": problem,
-                "initial_route": initial_route,
-                "initial_distance": initial_distance,
-                "result": sa_result,
-                "runtime_seconds": sa_runtime
-            }
-
-    mean_hc_history = np.mean(hc_history, axis=0)
-    mean_sa_history = np.mean(sa_history, axis=0)
-
-    print("Summary Statistics")
     print("\nHill Climber")
     print(f"Mean: {np.mean(hc_costs):.2f}")
     print(f"Std:  {np.std(hc_costs):.2f}")
@@ -135,30 +53,75 @@ def main():
     print(f"Worst:{np.max(sa_costs):.2f}")
     print(f"Mean Runtime: {np.mean(sa_runtimes):.4f}s")
 
+
+def main():
+    seeds = [16, 27, 28, 67, 69, 300, 420, 710, 1337, 12345]
+
+    runner = ExperimentRunner(
+        seeds=seeds,
+        num_cities=20,
+        max_iterations=10000,
+        neighbour_strategy="two_opt",
+        initial_temperature=1000.0,
+        cooling_rate=0.995,
+        min_temperature=0.001
+    )
+
+    experiment_data = runner.run()
+
+    results = experiment_data["results"]
+
+    hc_costs = experiment_data["hc_costs"]
+    sa_costs = experiment_data["sa_costs"]
+
+    hc_runtimes = experiment_data["hc_runtimes"]
+    sa_runtimes = experiment_data["sa_runtimes"]
+
+    hc_histories = experiment_data["hc_histories"]
+    sa_histories = experiment_data["sa_histories"]
+
+    best_hc_run = experiment_data["best_hc_run"]
+    best_sa_run = experiment_data["best_sa_run"]
+
+    mean_hc_history = np.mean(hc_histories, axis=0)
+    mean_sa_history = np.mean(sa_histories, axis=0)
+
+    print_summary_statistics(
+        hc_costs,
+        sa_costs,
+        hc_runtimes,
+        sa_runtimes
+    )
+
+    save_results_to_csv(
+        results,
+        output_path="results/tsp_results.csv"
+    )
+
     plot_route(
         best_hc_run["problem"].cities,
         best_hc_run["result"]["best_solution"],
         seed=best_hc_run["seed"],
-        title=f"best HC TSP route - distance: {best_hc_run['result']['best_cost']:.2f}"
+        title=f"Best HC TSP Route - Distance: {best_hc_run['result']['best_cost']:.2f}"
     )
 
     plot_route(
         best_sa_run["problem"].cities,
         best_sa_run["result"]["best_solution"],
         seed=best_sa_run["seed"],
-        title=f"best SA TSP route - distance: {best_sa_run['result']['best_cost']:.2f}"
+        title=f"Best SA TSP Route - Distance: {best_sa_run['result']['best_cost']:.2f}"
     )
 
     plot_convergence_comparison(
         hc_history=best_hc_run["result"]["history"],
         sa_history=best_sa_run["result"]["history"],
-        title="best run convergence comparison"
+        title="Best Run Convergence Comparison"
     )
 
     plot_mean_convergence(
         mean_hc_history,
         mean_sa_history,
-        title="mean convergence across seeds"
+        title="Mean Convergence Across Seeds"
     )
 
     plot_boxplots(
@@ -175,23 +138,6 @@ def main():
         sa_runtimes
     )
 
-    with open("results/tsp_results.csv", mode="w", newline="") as f:
-        fieldnames = [
-            "seed",
-            "algorithm",
-            "best_cost",
-            "iterations",
-            "neighbour_strategy",
-            "initial_temperature",
-            "cooling_rate",
-            "min_temperature",
-            "runtime_seconds"
-
-        ]
-
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(results)
 
 if __name__ == "__main__":
     main()
