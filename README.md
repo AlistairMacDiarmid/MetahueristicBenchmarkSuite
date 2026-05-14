@@ -57,7 +57,7 @@ The randomly generated initial solution contains numerous route crossings and in
 - Seed = 28
 - Closed-tour distance evaluation
 
-![Initial Route](images/initial_tsp_rotue.png)
+![Initial Route](images/initial_tsp_route.png)
 
 ---
 
