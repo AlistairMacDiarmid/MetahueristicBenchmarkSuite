@@ -11,10 +11,12 @@ def plot_route(cities: np.ndarray, route: np.ndarray, seed: int, title: str = "T
     plt.plot(
         closed_route[:, 0],
         closed_route[:, 1],
-        marker="o",
-        markersize=8,
-        linewidth=1.5,
-        color="red"
+        color ="steelblue",
+        linewidth = 1.25,
+        marker = "o",
+        markersize = 8,
+        markerfacecolor = "red",
+        markeredgecolor = "black",
     )
 
     for i, (x, y) in enumerate(cities):
@@ -60,5 +62,74 @@ def plot_mean_convergence(
     plt.ylabel("mean best distance (cost)")
     plt.grid(True)
     plt.legend()
+
+    plt.show()
+
+def plot_boxplots(
+    hc_costs: list[float],
+    sa_costs: list[float],
+    hc_runtimes: list[float],
+    sa_runtimes: list[float]
+):
+
+    #cost distribution
+    plt.figure(figsize=(8, 6))
+    plt.boxplot(
+        [hc_costs, sa_costs],
+        tick_labels=["Hill Climber", "Simulated Annealing"]
+    )
+    plt.title("Final Cost Distribution Across Seeds")
+    plt.ylabel("best distance (cost)")
+    plt.grid(True)
+    plt.show()
+
+
+    #runtime distribution
+    plt.figure(figsize=(8, 6))
+    plt.boxplot(
+        [hc_runtimes, sa_runtimes],
+        tick_labels=["Hill Climber", "Simulated Annealing"]
+    )
+    plt.title("Runtime Distribution Across Seeds")
+    plt.ylabel("runtime (seconds)")
+    plt.grid(True)
+    plt.show()
+
+def plot_violinplots(
+    hc_costs: list[float],
+    sa_costs: list[float],
+    hc_runtimes: list[float],
+    sa_runtimes: list[float]
+):
+
+    #cost violin plot
+
+    plt.figure(figsize=(8, 6))
+
+    plt.violinplot(
+        [hc_costs, sa_costs],
+        showmeans=True,
+        showmedians=True
+    )
+
+    plt.xticks([1, 2], ["Hill Climber", "Simulated Annealing"])
+
+    plt.title("Cost Distribution Density Across Seeds")
+    plt.ylabel("best distance (cost)")
+    plt.grid(True)
+
+    plt.show()
+
+    #runtime violin plot
+    plt.figure(figsize=(8, 6))
+    plt.violinplot(
+        [hc_runtimes, sa_runtimes],
+        showmeans=True,
+        showmedians=True
+    )
+    plt.xticks([1, 2], ["Hill Climber", "Simulated Annealing"])
+    plt.title("Runtime Distribution Density Across Seeds")
+    plt.ylabel("runtime (seconds)")
+    plt.grid(True)
 
     plt.show()

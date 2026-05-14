@@ -1,9 +1,10 @@
 from problems.TSPProblem import TSPProblem
 from algorithms.hill_climber import HillClimber
 from algorithms.simulated_annealing import SimulatedAnnealing
-from visualisation.tsp_plot import plot_route, plot_convergence_comparison, plot_mean_convergence
+from visualisation.tsp_plot import plot_route, plot_convergence_comparison, plot_mean_convergence, plot_boxplots, plot_violinplots
 import numpy as np
 import csv
+import time
 
 
 def main():
@@ -21,6 +22,8 @@ def main():
     hc_history = []
     sa_history = []
     results = []
+    hc_runtimes = []
+    sa_runtimes = []
 
     for seed in seeds:
         print(f"\nseed running: {seed}")
@@ -33,6 +36,7 @@ def main():
         initial_route = problem.generate_initial_solution(seed=seed)
         initial_distance = problem.evaluate(initial_route)
 
+        hc_start = time.perf_counter()
         hill_climber = HillClimber(
             max_iterations=max_iterations,
             seed=seed,
@@ -40,6 +44,10 @@ def main():
         )
 
         hc_result = hill_climber.optimise(problem)
+        hc_runtime = time.perf_counter() - hc_start
+        hc_runtimes.append(hc_runtime)
+
+        sa_start = time.perf_counter()
 
         simulated_annealing = SimulatedAnnealing(
             max_iterations=max_iterations,
@@ -51,6 +59,8 @@ def main():
         )
 
         sa_result = simulated_annealing.optimise(problem)
+        sa_runtime = time.perf_counter() - sa_start
+        sa_runtimes.append(sa_runtime)
 
         hc_costs.append(hc_result["best_cost"])
         sa_costs.append(sa_result["best_cost"])
@@ -65,7 +75,8 @@ def main():
             "neighbour_strategy": "two_opt",
             "initial_temperature": "",
             "cooling_rate": "",
-            "min_temperature": ""
+            "min_temperature": "",
+            "runtime_seconds": hc_runtime
         })
         results.append({
             "seed": seed,
@@ -75,12 +86,16 @@ def main():
             "initial_temperature": initial_temp,
             "cooling_rate": cooling_rate,
             "min_temperature": min_temp,
-            "neighbour_strategy": "two_opt"
+            "neighbour_strategy": "two_opt",
+            "runtime_seconds": sa_runtime
         })
 
         print(f"Initial Distance: {initial_distance:.2f}")
         print(f"HC Best Distance: {hc_result['best_cost']:.2f}")
+        print(f"HC runtime: {hc_runtime:.2f}")
         print(f"SA Best Distance: {sa_result['best_cost']:.2f}")
+        print(f"SA runtime: {sa_runtime:.2f}")
+
 
         if best_hc_run is None or hc_result["best_cost"] < best_hc_run["result"]["best_cost"]:
             best_hc_run = {
@@ -88,7 +103,8 @@ def main():
                 "problem": problem,
                 "initial_route": initial_route,
                 "initial_distance": initial_distance,
-                "result": hc_result
+                "result": hc_result,
+                "runtime_seconds": hc_runtime
             }
 
         if best_sa_run is None or sa_result["best_cost"] < best_sa_run["result"]["best_cost"]:
@@ -97,7 +113,8 @@ def main():
                 "problem": problem,
                 "initial_route": initial_route,
                 "initial_distance": initial_distance,
-                "result": sa_result
+                "result": sa_result,
+                "runtime_seconds": sa_runtime
             }
 
     mean_hc_history = np.mean(hc_history, axis=0)
@@ -109,12 +126,14 @@ def main():
     print(f"Std:  {np.std(hc_costs):.2f}")
     print(f"Best: {np.min(hc_costs):.2f}")
     print(f"Worst:{np.max(hc_costs):.2f}")
+    print(f"Mean Runtime: {np.mean(hc_runtimes):.4f}s")
 
     print("\nSimulated Annealing")
     print(f"Mean: {np.mean(sa_costs):.2f}")
     print(f"Std:  {np.std(sa_costs):.2f}")
     print(f"Best: {np.min(sa_costs):.2f}")
     print(f"Worst:{np.max(sa_costs):.2f}")
+    print(f"Mean Runtime: {np.mean(sa_runtimes):.4f}s")
 
     plot_route(
         best_hc_run["problem"].cities,
@@ -142,6 +161,20 @@ def main():
         title="mean convergence across seeds"
     )
 
+    plot_boxplots(
+        hc_costs,
+        sa_costs,
+        hc_runtimes,
+        sa_runtimes
+    )
+
+    plot_violinplots(
+        hc_costs,
+        sa_costs,
+        hc_runtimes,
+        sa_runtimes
+    )
+
     with open("results/tsp_results.csv", mode="w", newline="") as f:
         fieldnames = [
             "seed",
@@ -151,7 +184,9 @@ def main():
             "neighbour_strategy",
             "initial_temperature",
             "cooling_rate",
-            "min_temperature"
+            "min_temperature",
+            "runtime_seconds"
+
         ]
 
         writer = csv.DictWriter(f, fieldnames=fieldnames)
