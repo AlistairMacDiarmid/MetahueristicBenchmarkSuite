@@ -1,19 +1,3 @@
-# Metaheuristic Benchmark Suite
-
-A modular Python framework for benchmarking and visualising metaheuristic optimisation algorithms on classical optimisation problems.
-
-The goal of this project is to provide a reusable experimentation environment for analysing optimisation algorithms across multiple benchmark problems, with support for:
-
-- Modular optimisation architectures
-- Benchmark problem definitions
-- Visualisation of optimisation behaviour
-- Convergence analysis
-- Algorithm comparison
-- Constraint handling
-- Experiment reproducibility
-
----
-
 # Current Features
 
 ## Travelling Salesman Problem (TSP)
@@ -26,23 +10,36 @@ The framework currently includes an implementation of the Travelling Salesman Pr
 - Closed-tour distance evaluation
 - Feasibility checking
 - Route visualisation
+- Multi-seed experimentation
+- Statistical benchmarking
+- CSV result logging
 - Convergence tracking
 
 ---
 
-## Hill Climbing Optimiser
+## Implemented Algorithms
 
-A modular hill climbing optimiser has been implemented with support for multiple neighbourhood strategies.
+### Hill Climbing
 
-### Supported Neighbourhood Operators
+A greedy local-search optimiser supporting multiple neighbourhood operators.
 
-#### Swap Neighbourhood
-Randomly swaps the position of two cities within the route.
+#### Supported Neighbourhood Operators
+- Swap neighbourhood
+- 2-opt neighbourhood
 
-#### 2-opt Neighbourhood
-Performs route segment reversal to remove inefficient route crossings and improve convergence quality.
+The 2-opt implementation significantly improves route quality by removing inefficient route crossings.
 
-The 2-opt implementation significantly improves route quality compared to naive city swapping.
+---
+
+### Simulated Annealing
+
+A probabilistic optimisation algorithm capable of escaping local optima through controlled acceptance of worse solutions.
+
+Implemented features include:
+- Configurable temperature schedules
+- Exponential cooling
+- Multi-seed benchmarking
+- Comparative convergence analysis
 
 ---
 
@@ -50,164 +47,52 @@ The 2-opt implementation significantly improves route quality compared to naive 
 
 ## Initial TSP Route
 
-The randomly generated initial solution contains numerous route crossings and inefficient traversal patterns.
-
-**Configuration:**
-- 20 cities
-- Seed = 28
-- Closed-tour distance evaluation
+The randomly generated initial route contains multiple inefficient crossings and traversal patterns.
 
 ![Initial Route](images/initial_tsp_route.png)
 
 ---
 
-## Optimised TSP Route
+## Best Hill Climbing Route
 
-After optimisation using hill climbing with the 2-opt neighbourhood operator, the route becomes significantly more spatially coherent and the total route distance is substantially reduced.
+Best-performing hill climbing solution obtained across multiple benchmark seeds.
 
-**Configuration:**
-- Hill Climbing
-- 2-opt neighbourhood operator
-- 1000 iterations
-- Seed = 28
-
-![Optimised Route](images/optimised_tsp_route.png)
+![Best HC Route](images/best_hc_route.png)
 
 ---
 
-## Convergence Behaviour
+## Best Simulated Annealing Route
 
-The convergence curve demonstrates the optimisation process progressively reducing the total route cost over time.
+Best-performing simulated annealing solution obtained across multiple benchmark seeds.
 
-![Convergence Plot](images/tsp_convergence.png)
-
----
-
-# Project Structure
-
-```text
-MetaheuristicBenchmarkSuite/
-│
-├── algorithms/
-│   └── hill_climber.py
-│
-├── problems/
-│   └── tsp.py
-│
-├── visualisation/
-│   └── tsp_plot.py
-│
-├── images/
-│   ├── initial_tsp_route.png
-│   ├── optimised_tsp_route.png
-│   └── tsp_convergence.png
-│
-├── results/
-│
-├── main.py
-├── requirements.txt
-└── README.md
-```
+![Best SA Route](images/best_sa_route.png)
 
 ---
 
-# Technologies Used
+## Mean Convergence Comparison
 
-- Python
-- NumPy
-- matplotlib
+Mean convergence behaviour across multiple seeds comparing Hill Climbing and Simulated Annealing.
 
----
+This demonstrates:
+- Hill Climbing converging rapidly early
+- Simulated Annealing exploring more broadly
+- Simulated Annealing achieving slightly better average solution quality
 
-# Current Optimisation Pipeline
-
-The current optimisation workflow is structured as:
-
-1. Generate a benchmark optimisation problem
-2. Generate an initial feasible solution
-3. Apply a metaheuristic optimisation algorithm
-4. Evaluate solution quality
-5. Track convergence metrics
-6. Visualise optimisation behaviour
+![Mean Convergence](images/mean_convergence.png)
 
 ---
 
-# Planned Features
+# Statistical Benchmarking
 
-## Additional Algorithms
+Experiments are automatically executed across multiple seeds to evaluate:
+- robustness
+- convergence behaviour
+- optimisation stability
+- comparative solution quality
 
-- Simulated Annealing
-- Genetic Algorithms
-- Particle Swarm Optimisation
-- Differential Evolution
-- Tabu Search
+Results are automatically persisted to CSV files for later analysis.
 
----
-
-## Additional Benchmark Problems
-
-- Knapsack Problem
-- Job Scheduling
-- Vehicle Routing Problem (VRP)
-- Continuous Function Optimisation
-- Wind Farm Layout Optimisation
-
----
-
-## Future Improvements
-
-- Statistical benchmarking framework
-- Parallel fitness evaluation
-- Experiment orchestration system
-- CSV result logging
-- Interactive dashboards
-- Animated optimisation visualisations
-- Configuration system
-- GPU acceleration
-
----
-
-# Example Usage
-
-```python
-from problems.tsp import TSPProblem
-from algorithms.hill_climber import HillClimber
-
-seed = 28
-
-problem = TSPProblem.generate_random(
-    num_cities=20,
-    seed=seed
-)
-
-optimiser = HillClimber(
-    max_iterations=1000,
-    seed=seed,
-    neighbour_strategy="two_opt"
-)
-
-result = optimiser.optimise(problem)
-
-print(result["best_cost"])
-```
-
----
-
-# Motivation
-
-This project was created to explore the behaviour, performance, and architectural design of metaheuristic optimisation systems across both constrained and unconstrained optimisation problems.
-
-The framework is designed to prioritise:
-
-- Modularity
-- Extensibility
-- Reproducibility
-- Experimental analysis
-- Visual interpretability
-
----
-
-# License
-
-This project is licensed under the MIT License.
-
+Example metrics:
+- Mean best cost
+- Standard deviation
+- Best/worst run performance
