@@ -1,6 +1,7 @@
 from problems.TSPProblem import TSPProblem
 from algorithms.hill_climber import HillClimber
 from algorithms.simulated_annealing import SimulatedAnnealing
+from typing import Optional
 import time
 
 class ExperimentRunner:
@@ -34,8 +35,8 @@ class ExperimentRunner:
 
         results = []
 
-        best_hc_run = None
-        best_sa_run = None
+        best_hc_run: Optional[dict] = None
+        best_sa_run: Optional[dict] = None
 
         for seed in self.seeds:
             print(f"\nseed running: {seed}")
@@ -57,6 +58,7 @@ class ExperimentRunner:
             hc_start = time.perf_counter()
             hc_result = hill_climber.optimise(problem)
             hc_runtime = time.perf_counter() - hc_start
+            hc_result.runtime_seconds = hc_runtime
 
             simulated_annealing = SimulatedAnnealing(
                 max_iterations=self.max_iterations,
@@ -70,64 +72,65 @@ class ExperimentRunner:
             sa_start = time.perf_counter()
             sa_result = simulated_annealing.optimise(problem)
             sa_runtime = time.perf_counter() - sa_start
+            sa_result.runtime_seconds = sa_runtime
 
-            hc_costs.append(hc_result["best_cost"])
-            sa_costs.append(sa_result["best_cost"])
+            hc_costs.append(hc_result.best_cost)
+            sa_costs.append(sa_result.best_cost)
 
-            hc_runtimes.append(hc_runtime)
-            sa_runtimes.append(sa_runtime)
+            hc_runtimes.append(hc_result.runtime_seconds)
+            sa_runtimes.append(sa_result.runtime_seconds)
 
-            hc_histories.append(hc_result["history"])
-            sa_histories.append(sa_result["history"])
+            hc_histories.append(hc_result.history)
+            sa_histories.append(sa_result.history)
 
             results.append({
                 "seed": seed,
                 "algorithm": "HillClimber",
-                "best_cost": hc_result["best_cost"],
+                "best_cost": hc_result.best_cost,
                 "iterations": self.max_iterations,
                 "neighbour_strategy": self.neighbour_strategy,
                 "initial_temperature": "",
                 "cooling_rate": "",
                 "min_temperature": "",
-                "runtime_seconds": hc_runtime
+                "runtime_seconds": hc_result.runtime_seconds
             })
 
             results.append({
                 "seed": seed,
                 "algorithm": "SimulatedAnnealing",
-                "best_cost": sa_result["best_cost"],
+                "best_cost": sa_result.best_cost,
                 "iterations": self.max_iterations,
                 "neighbour_strategy": self.neighbour_strategy,
                 "initial_temperature": self.initial_temperature,
                 "cooling_rate": self.cooling_rate,
                 "min_temperature": self.min_temperature,
-                "runtime_seconds": sa_runtime
+                "runtime_seconds": sa_result.runtime_seconds
             })
 
             print(f"Initial Distance: {initial_distance:.2f}")
-            print(f"HC Best Distance: {hc_result['best_cost']:.2f}")
-            print(f"HC runtime: {hc_runtime:.4f}s")
-            print(f"SA Best Distance: {sa_result['best_cost']:.2f}")
-            print(f"SA runtime: {sa_runtime:.4f}s")
+            print(f"HC Best Distance: {hc_result.best_cost:.2f}")
+            print(f"HC runtime: {hc_result.runtime_seconds:.4f}s")
+            print(f"SA Best Distance: {sa_result.best_cost:.2f}")
+            print(f"SA runtime: {sa_result.runtime_seconds:.4f}s")
 
-            if best_hc_run is None or hc_result["best_cost"] < best_hc_run["result"]["best_cost"]:
+            if best_hc_run is None or hc_result.best_cost < best_hc_run["result"].best_cost:
                 best_hc_run = {
                     "seed": seed,
                     "problem": problem,
                     "initial_route": initial_route,
                     "initial_distance": initial_distance,
                     "result": hc_result,
-                    "runtime_seconds": hc_runtime
+                    "runtime_seconds": hc_result.runtime_seconds
                 }
 
-            if best_sa_run is None or sa_result["best_cost"] < best_sa_run["result"]["best_cost"]:
+            if best_sa_run is None or sa_result.best_cost < best_sa_run["result"].best_cost:
                 best_sa_run = {
                     "seed": seed,
                     "problem": problem,
                     "initial_route": initial_route,
                     "initial_distance": initial_distance,
                     "result": sa_result,
-                    "runtime_seconds": sa_runtime
+                    "runtime_seconds": sa_result.runtime_seconds
                 }
 
         return {

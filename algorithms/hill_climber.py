@@ -1,4 +1,5 @@
 import numpy as np
+from core.optimisation_result import OptimisationResult
 
 
 class HillClimber:
@@ -72,8 +73,8 @@ class HillClimber:
 
             history.append(best_cost)
 
-        return {
-            "best_solution": best_solution,
-            "best_cost": best_cost,
-            "history": history
-        }
+        return OptimisationResult(
+            best_solution = best_solution,
+            best_cost = best_cost,
+            history = history
+        )
