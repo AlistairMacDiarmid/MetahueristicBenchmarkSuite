@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_route(cities: np.ndarray, route: np.ndarray, seed: int, title: str = "TSP Route"):
+def plot_route(cities: np.ndarray, route: np.ndarray, seed: int, title: str = "TSP route"):
     ordered_cities = cities[route]
     closed_route = np.vstack((ordered_cities, ordered_cities[0]))
 
@@ -29,36 +29,17 @@ def plot_route(cities: np.ndarray, route: np.ndarray, seed: int, title: str = "T
     plt.show()
 
 
-def plot_convergence_comparison(
-    hc_history: list[float],
-    sa_history: list[float],
-    title: str = "Convergence Comparison"
-):
-    plt.figure(figsize=(10, 10))
-
-    plt.plot(hc_history, label="Hill Climber")
-    plt.plot(sa_history, label="Simulated Annealing")
-
-    plt.title(title)
-    plt.xlabel("iteration")
-    plt.ylabel("best distance (cost)")
-    plt.grid(True)
-    plt.legend()
-    plt.show()
-
-
 def plot_mean_convergence(
-    mean_hc_history: np.ndarray,
-    mean_sa_history: np.ndarray,
-    title: str = "Mean Convergence Comparison"
+    mean_histories: dict[str, np.ndarray],
+    title: str = "mean convergence across seeds"
 ):
     plt.figure(figsize=(10, 10))
 
-    plt.plot(mean_hc_history, label="Hill Climber")
-    plt.plot(mean_sa_history, label="Simulated Annealing")
+    for algorithm_name, history in mean_histories.items():
+        plt.plot(history, label=algorithm_name)
 
     plt.title(title)
-    plt.xlabel("iteration")
+    plt.xlabel("iteration / generation")
     plt.ylabel("mean best distance (cost)")
     plt.grid(True)
     plt.legend()
@@ -66,70 +47,57 @@ def plot_mean_convergence(
     plt.show()
 
 def plot_boxplots(
-    hc_costs: list[float],
-    sa_costs: list[float],
-    hc_runtimes: list[float],
-    sa_runtimes: list[float]
+    algorithm_costs: dict[str, list[float]],
+    algorithm_runtimes: dict[str, list[float]]
 ):
+    algorithm_names = list(algorithm_costs.keys())
 
-    #cost distribution
+    cost_data = [algorithm_costs[name] for name in algorithm_names]
+    runtime_data = [algorithm_runtimes[name] for name in algorithm_names]
+
     plt.figure(figsize=(8, 6))
-    plt.boxplot(
-        [hc_costs, sa_costs],
-        tick_labels=["Hill Climber", "Simulated Annealing"]
-    )
-    plt.title("Final Cost Distribution Across Seeds")
+    plt.boxplot(cost_data, tick_labels=algorithm_names)
+    plt.title("final cost distribution across seeds")
     plt.ylabel("best distance (cost)")
     plt.grid(True)
     plt.show()
 
-
-    #runtime distribution
     plt.figure(figsize=(8, 6))
-    plt.boxplot(
-        [hc_runtimes, sa_runtimes],
-        tick_labels=["Hill Climber", "Simulated Annealing"]
-    )
-    plt.title("Runtime Distribution Across Seeds")
+    plt.boxplot(runtime_data, tick_labels=algorithm_names)
+    plt.title("runtime distribution across seeds")
     plt.ylabel("runtime (seconds)")
     plt.grid(True)
     plt.show()
 
 def plot_violinplots(
-    hc_costs: list[float],
-    sa_costs: list[float],
-    hc_runtimes: list[float],
-    sa_runtimes: list[float]
+    algorithm_costs: dict[str, list[float]],
+    algorithm_runtimes: dict[str, list[float]]
 ):
+    algorithm_names = list(algorithm_costs.keys())
 
-    #cost violin plot
+    cost_data = [algorithm_costs[name] for name in algorithm_names]
+    runtime_data = [algorithm_runtimes[name] for name in algorithm_names]
 
     plt.figure(figsize=(8, 6))
-
     plt.violinplot(
-        [hc_costs, sa_costs],
+        cost_data,
         showmeans=True,
         showmedians=True
     )
-
-    plt.xticks([1, 2], ["Hill Climber", "Simulated Annealing"])
-
-    plt.title("Cost Distribution Density Across Seeds")
+    plt.xticks(range(1, len(algorithm_names) + 1), algorithm_names)
+    plt.title("cost distribution density across seeds")
     plt.ylabel("best distance (cost)")
     plt.grid(True)
-
     plt.show()
 
-    #runtime violin plot
     plt.figure(figsize=(8, 6))
     plt.violinplot(
-        [hc_runtimes, sa_runtimes],
+        runtime_data,
         showmeans=True,
         showmedians=True
     )
-    plt.xticks([1, 2], ["Hill Climber", "Simulated Annealing"])
-    plt.title("Runtime Distribution Density Across Seeds")
+    plt.xticks(range(1, len(algorithm_names) + 1), algorithm_names)
+    plt.title("runtime distribution density across seeds")
     plt.ylabel("runtime (seconds)")
     plt.grid(True)
-
     plt.show()

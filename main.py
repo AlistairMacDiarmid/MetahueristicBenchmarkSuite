@@ -5,6 +5,7 @@ from experiments.experiment_runner import ExperimentRunner
 
 from algorithms.hill_climber import HillClimber
 from algorithms.simulated_annealing import SimulatedAnnealing
+from algorithms.GA import  GeneticAlgorithm
 
 from core.algorithm_config import AlgorithmConfig
 
@@ -73,6 +74,19 @@ def main():
                 "cooling_rate": 0.995,
                 "min_temperature": 0.001
             }
+        ),
+
+        AlgorithmConfig(
+            name="GeneticAlgorithm",
+            algorithm_class=GeneticAlgorithm,
+            parameters={
+                "population_size": 100,
+                "generations": 300,
+                "tournament_size": 3,
+                "crossover_rate": 0.9,
+                "mutation_rate": 0.1,
+                "elitism": True
+            }
         )
     ]
 
@@ -108,37 +122,39 @@ def main():
             run_data["problem"].cities,
             run_data["result"].best_solution,
             seed=run_data["seed"],
-            title=f"{algorithm_name} Best Route - Distance: {run_data['result'].best_cost:.2f}"
+            title=f"{algorithm_name} best route - distance: {run_data['result'].best_cost:.2f}"
         )
 
+    histories = algorithm_histories[algorithm_name]
     mean_histories = {}
-    for algorithm_name in algorithm_histories:
-        mean_histories[algorithm_name] = np.mean(
-            algorithm_histories[algorithm_name],
-            axis=0
-        )
 
-    hc_mean = mean_histories["HillClimber"]
-    sa_mean = mean_histories["SimulatedAnnealing"]
+    min_length = min(len(history) for history in histories)
+
+    trimmed_histories = [
+        history[:min_length]
+        for history in histories
+    ]
+
+    mean_histories[algorithm_name] = np.mean(
+        trimmed_histories,
+        axis=0
+    )
+
+
 
     plot_mean_convergence(
-        hc_mean,
-        sa_mean,
-        title="Mean Convergence Across Seeds"
+        mean_histories,
+        title="mean convergence across seeds"
     )
 
     plot_boxplots(
-        algorithm_costs["HillClimber"],
-        algorithm_costs["SimulatedAnnealing"],
-        algorithm_runtimes["HillClimber"],
-        algorithm_runtimes["SimulatedAnnealing"]
+        algorithm_costs,
+        algorithm_runtimes
     )
 
     plot_violinplots(
-        algorithm_costs["HillClimber"],
-        algorithm_costs["SimulatedAnnealing"],
-        algorithm_runtimes["HillClimber"],
-        algorithm_runtimes["SimulatedAnnealing"]
+        algorithm_costs,
+        algorithm_runtimes
     )
 
 

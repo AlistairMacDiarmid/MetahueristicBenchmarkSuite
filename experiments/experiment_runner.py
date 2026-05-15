@@ -26,8 +26,7 @@ class ExperimentRunner:
 
         results = []
 
-        best_hc_run: Optional[dict] = None
-        best_sa_run: Optional[dict] = None
+
 
         for config in self.algorithm_configs:
             algorithm_costs[config.name] = []
