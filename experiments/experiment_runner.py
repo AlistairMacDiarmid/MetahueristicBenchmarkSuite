@@ -1,6 +1,7 @@
 from problems.TSPProblem import TSPProblem
 from algorithms.hill_climber import HillClimber
 from algorithms.simulated_annealing import SimulatedAnnealing
+from core.algorithm_config import AlgorithmConfig
 from typing import Optional
 import time
 
@@ -9,34 +10,30 @@ class ExperimentRunner:
         self,
         seeds: list[int],
         num_cities: int,
-        max_iterations: int,
-        neighbour_strategy: str = "two_opt",
-        initial_temperature: float = 1000.0,
-        cooling_rate: float = 0.995,
-        min_temperature: float = 0.001
+        algorithm_configs: list[AlgorithmConfig]
     ):
         self.seeds = seeds
         self.num_cities = num_cities
-        self.max_iterations = max_iterations
-        self.neighbour_strategy = neighbour_strategy
-        self.initial_temperature = initial_temperature
-        self.cooling_rate = cooling_rate
-        self.min_temperature = min_temperature
+        self.algorithm_configs = algorithm_configs
 
     def run(self):
-        hc_costs = []
-        sa_costs = []
 
-        hc_runtimes = []
-        sa_runtimes = []
+        algorithm_costs = {}
+        algorithm_runtimes = {}
+        algorithm_histories = {}
 
-        hc_histories = []
-        sa_histories = []
+        best_runs = {}
 
         results = []
 
         best_hc_run: Optional[dict] = None
         best_sa_run: Optional[dict] = None
+
+        for config in self.algorithm_configs:
+            algorithm_costs[config.name] = []
+            algorithm_runtimes[config.name] = []
+            algorithm_histories[config.name] = []
+            best_runs[config.name] = None
 
         for seed in self.seeds:
             print(f"\nseed running: {seed}")
@@ -49,98 +46,52 @@ class ExperimentRunner:
             initial_route = problem.generate_initial_solution(seed=seed)
             initial_distance = problem.evaluate(initial_route)
 
-            hill_climber = HillClimber(
-                max_iterations=self.max_iterations,
-                seed=seed,
-                neighbour_strategy=self.neighbour_strategy
-            )
-
-            hc_start = time.perf_counter()
-            hc_result = hill_climber.optimise(problem)
-            hc_runtime = time.perf_counter() - hc_start
-            hc_result.runtime_seconds = hc_runtime
-
-            simulated_annealing = SimulatedAnnealing(
-                max_iterations=self.max_iterations,
-                seed=seed,
-                neighbour_strategy=self.neighbour_strategy,
-                initial_temperature=self.initial_temperature,
-                cooling_rate=self.cooling_rate,
-                min_temperature=self.min_temperature
-            )
-
-            sa_start = time.perf_counter()
-            sa_result = simulated_annealing.optimise(problem)
-            sa_runtime = time.perf_counter() - sa_start
-            sa_result.runtime_seconds = sa_runtime
-
-            hc_costs.append(hc_result.best_cost)
-            sa_costs.append(sa_result.best_cost)
-
-            hc_runtimes.append(hc_result.runtime_seconds)
-            sa_runtimes.append(sa_result.runtime_seconds)
-
-            hc_histories.append(hc_result.history)
-            sa_histories.append(sa_result.history)
-
-            results.append({
-                "seed": seed,
-                "algorithm": "HillClimber",
-                "best_cost": hc_result.best_cost,
-                "iterations": self.max_iterations,
-                "neighbour_strategy": self.neighbour_strategy,
-                "initial_temperature": "",
-                "cooling_rate": "",
-                "min_temperature": "",
-                "runtime_seconds": hc_result.runtime_seconds
-            })
-
-            results.append({
-                "seed": seed,
-                "algorithm": "SimulatedAnnealing",
-                "best_cost": sa_result.best_cost,
-                "iterations": self.max_iterations,
-                "neighbour_strategy": self.neighbour_strategy,
-                "initial_temperature": self.initial_temperature,
-                "cooling_rate": self.cooling_rate,
-                "min_temperature": self.min_temperature,
-                "runtime_seconds": sa_result.runtime_seconds
-            })
-
             print(f"Initial Distance: {initial_distance:.2f}")
-            print(f"HC Best Distance: {hc_result.best_cost:.2f}")
-            print(f"HC runtime: {hc_result.runtime_seconds:.4f}s")
-            print(f"SA Best Distance: {sa_result.best_cost:.2f}")
-            print(f"SA runtime: {sa_result.runtime_seconds:.4f}s")
 
-            if best_hc_run is None or hc_result.best_cost < best_hc_run["result"].best_cost:
-                best_hc_run = {
-                    "seed": seed,
-                    "problem": problem,
-                    "initial_route": initial_route,
-                    "initial_distance": initial_distance,
-                    "result": hc_result,
-                    "runtime_seconds": hc_result.runtime_seconds
-                }
+            for config in self.algorithm_configs:
+                optimiser = config.algorithm_class(
+                    seed = seed,
+                    **config.parameters
+                )
 
-            if best_sa_run is None or sa_result.best_cost < best_sa_run["result"].best_cost:
-                best_sa_run = {
+                start_time = time.perf_counter()
+
+                result = optimiser.optimise(problem)
+
+                run_time = time.perf_counter() - start_time
+
+                result.runtime_seconds = run_time
+
+                algorithm_costs[config.name].append(result.best_cost)
+                algorithm_runtimes[config.name].append(result.runtime_seconds)
+                algorithm_histories[config.name].append(result.history)
+
+                print(f"{config.name} best distance: {result.best_cost:.2f}")
+                print(f"{config.name} runtime: {run_time:.4f}")
+
+                results.append({
                     "seed": seed,
-                    "problem": problem,
-                    "initial_route": initial_route,
-                    "initial_distance": initial_distance,
-                    "result": sa_result,
-                    "runtime_seconds": sa_result.runtime_seconds
-                }
+                    "algorithm": config.name,
+                    "best_cost": result.best_cost,
+                    "runtime_seconds": result.runtime_seconds,
+                    **config.parameters
+                })
+
+                current_best = best_runs[config.name]
+
+                if current_best is None or result.best_cost < current_best["result"].best_cost:
+                    best_runs[config.name] = {
+                        "seed": seed,
+                        "problem": problem,
+                        "initial_route": initial_route,
+                        "initial_distance": initial_distance,
+                        "result": result,
+                    }
 
         return {
             "results": results,
-            "hc_costs": hc_costs,
-            "sa_costs": sa_costs,
-            "hc_runtimes": hc_runtimes,
-            "sa_runtimes": sa_runtimes,
-            "hc_histories": hc_histories,
-            "sa_histories": sa_histories,
-            "best_hc_run": best_hc_run,
-            "best_sa_run": best_sa_run
+            "algorithm_costs": algorithm_costs,
+            "algorithm_runtimes": algorithm_runtimes,
+            "algorithm_histories": algorithm_histories,
+            "best_runs": best_runs
         }
