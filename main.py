@@ -5,7 +5,7 @@ from experiments.experiment_runner import ExperimentRunner
 
 from algorithms.hill_climber import HillClimber
 from algorithms.simulated_annealing import SimulatedAnnealing
-from algorithms.GA import  GeneticAlgorithm
+from algorithms.genetic_algorithm import  GeneticAlgorithm
 
 from core.algorithm_config import AlgorithmConfig
 
@@ -80,11 +80,12 @@ def main():
             name="GeneticAlgorithm",
             algorithm_class=GeneticAlgorithm,
             parameters={
-                "population_size": 100,
-                "generations": 300,
+                "population_size": 150,
+                "generations": 1000,
                 "tournament_size": 3,
                 "crossover_rate": 0.9,
-                "mutation_rate": 0.1,
+                "initial_mutation_rate": 0.15,
+                "min_mutation_rate": 0.01,
                 "elitism": True
             }
         )
@@ -125,20 +126,21 @@ def main():
             title=f"{algorithm_name} best route - distance: {run_data['result'].best_cost:.2f}"
         )
 
-    histories = algorithm_histories[algorithm_name]
+
     mean_histories = {}
 
-    min_length = min(len(history) for history in histories)
+    for algorithm_name, histories in algorithm_histories.items():
+        min_length = min(len(history) for history in histories)
 
-    trimmed_histories = [
-        history[:min_length]
-        for history in histories
-    ]
+        trimmed_histories = [
+            history[:min_length]
+            for history in histories
+        ]
 
-    mean_histories[algorithm_name] = np.mean(
-        trimmed_histories,
-        axis=0
-    )
+        mean_histories[algorithm_name] = np.mean(
+            trimmed_histories,
+            axis=0
+        )
 
 
 
